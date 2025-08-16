@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config_manager.dart';
 import '../../main.dart';
+import '../wrong_answer_book/wrong_answer_book_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -22,39 +23,7 @@ class _ProfilePageState extends State<ProfilePage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // 应用信息卡片
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        '应用信息',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _buildInfoRow('应用名称', config.appName),
-                  _buildInfoRow('版本号', config.version),
-                  _buildInfoRow('语言', config.language),
-                  _buildInfoRow('题库模块数', '${config.questionModules.length}'),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
+
           
           // 主题设置卡片
           Card(
@@ -88,26 +57,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     value: config.isDarkMode,
                     onChanged: (value) async {
                       await ConfigManager.toggleDarkMode();
-                      setState(() {});
-                      // 通知应用主题变化，但保持在当前页面
                       if (mounted) {
-                        // 找到根级别的 MyApp 并触发重建
-                        final navigator = Navigator.of(context);
-                        while (navigator.canPop()) {
-                          navigator.pop();
-                        }
-                        // 重新推送当前页面到个人设置
-                        navigator.pushReplacement(
-                          MaterialPageRoute(builder: (context) => const MyApp()),
-                        );
-                        // 延迟导航到个人设置页面
-                        Future.delayed(const Duration(milliseconds: 100), () {
-                          if (mounted) {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(builder: (context) => const ProfilePage()),
-                            );
-                          }
-                        });
+                        setState(() {});
+                        // 使用更优雅的方式通知主题变化
+                        MyApp.of(context)?.updateTheme();
                       }
                     },
                   ),
@@ -161,6 +114,21 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 16),
                   
+                  // 错题本按钮
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _navigateToWrongAnswerBook(),
+                      icon: const Icon(Icons.bookmark_border),
+                      label: const Text('我的错题本'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  
                   // 重置配置按钮
                   SizedBox(
                     width: double.infinity,
@@ -183,24 +151,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
   
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 14, color: Colors.grey),
-          ),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-          ),
-        ],
-      ),
-    );
-  }
+
   
   Widget _buildThemeColorChip(String themeKey, Color color, String label) {
     final config = ConfigManager.config;
@@ -212,32 +163,25 @@ class _ProfilePageState extends State<ProfilePage> {
       onSelected: (selected) async {
         if (selected) {
           await ConfigManager.updateTheme(themeKey);
-          setState(() {});
-          // 通知应用主题变化，但保持在当前页面
           if (mounted) {
-            // 找到根级别的 MyApp 并触发重建
-            final navigator = Navigator.of(context);
-            while (navigator.canPop()) {
-              navigator.pop();
-            }
-            // 重新推送当前页面到个人设置
-            navigator.pushReplacement(
-              MaterialPageRoute(builder: (context) => const MyApp()),
-            );
-            // 延迟导航到个人设置页面
-            Future.delayed(const Duration(milliseconds: 100), () {
-              if (mounted) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const ProfilePage()),
-                );
-              }
-            });
+            setState(() {});
+            // 使用更优雅的方式通知主题变化
+            MyApp.of(context)?.updateTheme();
           }
         }
       },
       avatar: CircleAvatar(
         backgroundColor: color,
         radius: 8,
+      ),
+    );
+  }
+  
+  void _navigateToWrongAnswerBook() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const WrongAnswerBookPage(),
       ),
     );
   }
@@ -258,30 +202,14 @@ class _ProfilePageState extends State<ProfilePage> {
               onPressed: () async {
                 Navigator.of(context).pop();
                 await ConfigManager.resetConfig();
-                setState(() {});
-                // 通知应用配置重置，但保持在当前页面
                 if (mounted) {
-                  // 找到根级别的 MyApp 并触发重建
-                  final navigator = Navigator.of(context);
-                  while (navigator.canPop()) {
-                    navigator.pop();
-                  }
-                  // 重新推送当前页面到个人设置
-                  navigator.pushReplacement(
-                    MaterialPageRoute(builder: (context) => const MyApp()),
+                  setState(() {});
+                  // 使用更优雅的方式通知主题变化
+                  MyApp.of(context)?.updateTheme();
+                  // 显示重置成功提示
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('配置已重置')),
                   );
-                  // 延迟导航到个人设置页面
-                  Future.delayed(const Duration(milliseconds: 100), () {
-                    if (mounted) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => const ProfilePage()),
-                      );
-                      // 显示重置成功提示
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('配置已重置')),
-                      );
-                    }
-                  });
                 }
               },
               child: const Text('确定'),

@@ -174,7 +174,7 @@
           "answer": "RESTful API是一种基于REST架构风格的Web API设计规范，使用HTTP方法（GET、POST、PUT、DELETE）来操作资源，具有无状态、统一接口等特点。REST原则：1.客户端-服务器架构；2.无状态；3.可缓存；4.统一接口；5.分层系统；6.按需代码（可选）。",
           "difficulty": "easy",
           "tags": ["API", "REST", "HTTP"],
-          "ai_answer": "RESTful API是现代Web服务的标准设计模式。它的核心思想是将网络上的所有内容都视为资源，通过统一的接口进行操作。设计RESTful API时要注意：1.使用名词而非动词作为URL；2.合理使用HTTP状态码；3.支持多种数据格式；4.版本控制策略；5.适当的错误处理。这样设计的API更易理解、维护和扩展。"
+          "ai_answer": "# RESTful API 设计指南\n\nRESTful API是现代Web服务的**标准设计模式**。它的核心思想是将网络上的所有内容都视为资源，通过统一的接口进行操作。\n\n## 设计原则\n\n设计RESTful API时要注意以下几点：\n\n1. **使用名词而非动词**作为URL\n2. **合理使用HTTP状态码**\n3. **支持多种数据格式**\n4. **版本控制策略**\n5. **适当的错误处理**\n\n## 示例代码\n\n```javascript\n// GET 获取用户列表\nGET /api/v1/users\n\n// POST 创建新用户\nPOST /api/v1/users\n{\n  \"name\": \"张三\",\n  \"email\": \"zhangsan@example.com\"\n}\n```\n\n> 💡 **提示**: 这样设计的API更易理解、维护和扩展。"
         }
       ]
     },

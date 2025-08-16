@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import '../../utils/asset_manager.dart';
+import '../../models/question.dart';
+import 'question_detail_page.dart';
 
 class QuestionListPage extends StatefulWidget {
   final String categoryId;
@@ -89,110 +91,49 @@ class _QuestionListPageState extends State<QuestionListPage> {
     }
   }
 
-  void _showQuestionDetail(Question question) {
+  void _navigateToQuestionDetail(Question question) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QuestionDetailPage(
+          question: question,
+          categoryName: widget.categoryName,
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteDialog(Question question, int index) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(
-            '题目 #${question.id}',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '问题:',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  question.question,
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '答案:',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  question.answer,
-                  style: const TextStyle(fontSize: 14),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getDifficultyColor(question.difficulty),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        _getDifficultyText(question.difficulty),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (question.tags.isNotEmpty) ...<Widget>[
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: question.tags.map((tag) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.blue.withOpacity(0.3),
-                          ),
-                        ),
-                        child: Text(
-                          tag,
-                          style: TextStyle(
-                            color: Colors.blue[700],
-                            fontSize: 12,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ],
-            ),
-          ),
+          title: const Text('删除题目'),
+          content: Text('确定要删除题目 "${question.question}" 吗？'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('关闭'),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  questions.removeAt(index);
+                });
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('题目已删除')),
+                );
+              },
+              child: const Text('删除', style: TextStyle(color: Colors.red)),
             ),
           ],
         );
       },
     );
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -254,118 +195,117 @@ class _QuestionListPageState extends State<QuestionListPage> {
                       ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(8),
                       itemCount: questions.length,
                       itemBuilder: (context, index) {
                         final question = questions[index];
                         return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          elevation: 2,
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(16),
-                            title: Text(
-                              question.question,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: _getDifficultyColor(question.difficulty),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        _getDifficultyText(question.difficulty),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
+                          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                          elevation: 1,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: () => _navigateToQuestionDetail(question),
+                            onLongPress: () => _showDeleteDialog(question, index),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
+                                children: [
+                                  // 难度指示器
+                                  Container(
+                                    width: 4,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: _getDifficultyColor(question.difficulty),
+                                      borderRadius: BorderRadius.circular(2),
                                     ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'ID: ${question.id}',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (question.tags.isNotEmpty) ...<Widget>[
-                  const SizedBox(height: 8),
-                                  Wrap(
-                                    spacing: 4,
-                                    runSpacing: 4,
-                                    children: question.tags.take(3).map((tag) {
-                                      return Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          tag,
-                                          style: TextStyle(
-                                            color: Colors.blue[700],
-                                            fontSize: 10,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  // 题目内容
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          question.question,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
                                           ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      );
-                                    }).toList(),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 6,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: _getDifficultyColor(question.difficulty).withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                _getDifficultyText(question.difficulty),
+                                                style: TextStyle(
+                                                  color: _getDifficultyColor(question.difficulty),
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            if (question.tags.isNotEmpty)
+                                              Expanded(
+                                                child: Wrap(
+                                                  spacing: 4,
+                                                  runSpacing: 2,
+                                                  children: question.tags.take(2).map((tag) {
+                                                    return Container(
+                                                      padding: const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 1,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.grey.withOpacity(0.1),
+                                                        borderRadius: BorderRadius.circular(4),
+                                                      ),
+                                                      child: Text(
+                                                        tag,
+                                                        style: const TextStyle(
+                                                          color: Colors.grey,
+                                                          fontSize: 9,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }).toList(),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  // ID
+                                  Text(
+                                    '#${question.id}',
+                                    style: TextStyle(
+                                      color: Colors.grey[500],
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ],
-                              ],
+                              ),
                             ),
-                            trailing: const Icon(Icons.arrow_forward_ios),
-                            onTap: () => _showQuestionDetail(question),
                           ),
                         );
                       },
                     ),
-    );
-  }
-}
-
-class Question {
-  final int id;
-  final String question;
-  final String answer;
-  final String difficulty;
-  final List<String> tags;
-
-  Question({
-    required this.id,
-    required this.question,
-    required this.answer,
-    required this.difficulty,
-    required this.tags,
-  });
-
-  factory Question.fromJson(Map<String, dynamic> json) {
-    return Question(
-      id: json['id'],
-      question: json['question'],
-      answer: json['answer'],
-      difficulty: json['difficulty'],
-      tags: List<String>.from(json['tags'] ?? []),
     );
   }
 }

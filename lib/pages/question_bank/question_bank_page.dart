@@ -599,6 +599,21 @@ class _QuestionBankPageState extends State<QuestionBankPage> {
     _loadModules();
   }
 
+  // 获取响应式列数
+  int _getResponsiveCrossAxisCount(double width) {
+    if (width > 1200) {
+      return 5;
+    } else if (width > 900) {
+      return 4;
+    } else if (width > 600) {
+      return 3;
+    } else if (width > 400) {
+      return 2;
+    } else {
+      return 1;
+    }
+  }
+
   // 映射分类图标到模块图标
   String _mapCategoryIconToModuleIcon(String categoryIcon) {
     switch (categoryIcon.toLowerCase()) {
@@ -628,7 +643,7 @@ class _QuestionBankPageState extends State<QuestionBankPage> {
     {'name': 'design_services', 'icon': Icons.design_services, 'label': '设计'},
     {'name': 'engineering', 'icon': Icons.engineering, 'label': '工程'},
     {'name': 'account_balance', 'icon': Icons.account_balance, 'label': '金融'},
-    {'name': 'medical_services', 'icon': Icons.medical_services, 'label': '医疗'},
+    {'name': 'data_object', 'icon': Icons.data_object, 'label': '数据'},
   ];
 
   // 添加新模块
@@ -997,38 +1012,66 @@ class _QuestionBankPageState extends State<QuestionBankPage> {
       );
     }
     
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: tagGroups.length,
-      itemBuilder: (context, index) {
-        final tagGroup = tagGroups[index];
-        return Card(
-          elevation: 2,
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Theme.of(context).primaryColor,
-              child: Text(
-                tagGroup['count'].toString(),
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ),
-            title: Text(
-              tagGroup['name'],
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: Text('${tagGroup['count']} 道题目'),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-               // 标签视图暂时显示提示信息，后续可以扩展为支持标签筛选的题目列表
-               ScaffoldMessenger.of(context).showSnackBar(
-                 SnackBar(
-                   content: Text('标签"${tagGroup['name']}"包含 ${tagGroup['count']} 道题目'),
-                   duration: const Duration(seconds: 2),
-                 ),
-               );
-             },
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = _getResponsiveCrossAxisCount(constraints.maxWidth);
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.2,
           ),
+          itemCount: tagGroups.length,
+          itemBuilder: (context, index) {
+            final tagGroup = tagGroups[index];
+            return Card(
+              elevation: 2,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('标签"${tagGroup['name']}"包含 ${tagGroup['count']} 道题目'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        child: Text(
+                          tagGroup['count'].toString(),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        tagGroup['name'],
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${tagGroup['count']} 道题目',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -1061,102 +1104,78 @@ class _QuestionBankPageState extends State<QuestionBankPage> {
       );
     }
     
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.2,
-      ),
-      itemCount: modules.length,
-      itemBuilder: (context, index) {
-        final module = modules[index];
-        return Card(
-          elevation: 4,
-          child: GestureDetector(
-            onTap: () {
-              // 查找对应的分类
-              final category = categories.firstWhere(
-                (cat) => cat['name'] == module.name,
-                orElse: () => <String, dynamic>{},
-              );
-              
-              if (category.isNotEmpty) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => QuestionListPage(
-                      categoryId: category['id'],
-                      categoryName: category['name'],
-                    ),
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('未找到${module.name}对应的题目'),
-                  ),
-                );
-              }
-            },
-            onLongPress: () {
-              _showDeleteOptions(context, index);
-            },
-            child: Container(
-              decoration: BoxDecoration(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = _getResponsiveCrossAxisCount(constraints.maxWidth);
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.2,
+          ),
+          itemCount: modules.length,
+          itemBuilder: (context, index) {
+            final module = modules[index];
+            return Card(
+              elevation: 4,
+              child: InkWell(
                 borderRadius: BorderRadius.circular(12),
-                color: Theme.of(context).cardColor,
-              ),
-              child: Stack(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _getIconData(module.icon),
-                          size: 48,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          module.name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: () => _deleteModule(index),
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          child: const Icon(
-                            Icons.close,
-                            color: Colors.red,
-                            size: 20,
-                          ),
+                onTap: () {
+                  final category = categories.firstWhere(
+                    (cat) => cat['name'] == module.name,
+                    orElse: () => <String, dynamic>{},
+                  );
+                  
+                  if (category.isNotEmpty) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => QuestionListPage(
+                          categoryId: category['id'],
+                          categoryName: category['name'],
                         ),
                       ),
-                    ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('未找到${module.name}对应的题目'),
+                      ),
+                    );
+                  }
+                },
+                onLongPress: () {
+                  _showDeleteOptions(context, index);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _getIconData(module.icon),
+                        size: 48,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        module.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
